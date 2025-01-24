@@ -1,0 +1,74 @@
+[
+  {
+    "id": 2,
+    "title": "Reloj de Pulsera",
+    "description": "Reloj de pulsera con correa de cuero y pantalla digital.",
+    "price": 29.99,
+    "img": "https://example.com/reloj_pulsera.jpg",
+    "code": "RLP001",
+    "stock": 200
+  },
+  {
+    "id": 3,
+    "title": "Lámpara LED",
+    "description": "Lámpara LED regulable con control remoto.",
+    "price": 24.99,
+    "img": "https://example.com/lampara_led.jpg",
+    "code": "LED001",
+    "stock": 75
+  },
+  {
+    "id": 4,
+    "title": "Smartphone 6GB RAM",
+    "description": "Smartphone con 6GB de RAM y 128GB de almacenamiento.",
+    "price": 299.99,
+    "img": "https://example.com/smartphone_6gb.jpg",
+    "code": "SMT001",
+    "stock": 20
+  },
+  {
+    "id": 5,
+    "title": "Cafetera Eléctrica",
+    "description": "Cafetera eléctrica con capacidad para 1.5L.",
+    "price": 39.99,
+    "img": "https://example.com/cafetera_electrica.jpg",
+    "code": "CAF001",
+    "stock": 40
+  },
+  {
+    "id": 6,
+    "title": "Mochila Escolar",
+    "description": "Mochila escolar con múltiples compartimentos y respaldo ergonómico.",
+    "price": 19.99,
+    "img": "https://example.com/mochila_escolar.jpg",
+    "code": "MSE001",
+    "stock": 150
+  },
+  {
+    "id": 7,
+    "title": "Kit de Maquillaje",
+    "description": "Kit completo de maquillaje con más de 20 productos.",
+    "price": 49.99,
+    "img": "https://example.com/kit_maquillaje.jpg",
+    "code": "KMA001",
+    "stock": 60
+  },
+  {
+    "id": 8,
+    "title": "Cámara Digital 4K",
+    "description": "Cámara con grabación en 4K y enfoque automático.",
+    "price": 399.99,
+    "img": "https://example.com/camara_digital_4k.jpg",
+    "code": "CDA001",
+    "stock": 25
+  },
+  {
+    "id": 9,
+    "title": "Teclado Mecánico RGB",
+    "description": "Teclado mecánico con retroiluminación RGB personalizable.",
+    "price": 79.99,
+    "img": "https://example.com/teclado_mecanico_rgb.jpg",
+    "code": "TMR001",
+    "stock": 100
+  }
+]
