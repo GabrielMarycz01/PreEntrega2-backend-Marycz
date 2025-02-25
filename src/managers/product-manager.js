@@ -1,115 +1,119 @@
-import { promises as fs } from "fs";
+import ProductModel from "../models/product.model.js";
 
+class ProductManager {
+    async addProduct({ title, description, price, img, code, stock, category, thumbnails }) {
+        try {
+            if (!title || !description || !price || !code || !stock || !category) {
+                console.error("Todos los campos son obligatorios");
+                throw new Error("Faltan campos obligatorios");
+            }
 
+            const existeProducto = await ProductModel.findOne({ code: code });
+            if (existeProducto) {
+                console.error("El código debe ser único");
+                throw new Error("El código ya existe");
+            }
 
-class productManager {
-  static ultId = 0; // Esta es la variable que debe mantener el id más alto actual
+            const newProduct = new ProductModel({
+                title,
+                description,
+                price,
+                img,
+                code,
+                stock,
+                category,
+                status: true,
+                thumbnails: thumbnails || []
+            });
 
-  constructor(path) {
-    this.products = [];
-    this.path = path;
-  }
-
-  // Inicialización para leer el archivo y actualizar ultId con el valor más alto de id
-  async init() {
-    const arrayProductos = await this.leerArchivo();
-    if (arrayProductos.length > 0) {
-      // Actualiza ultId al máximo id + 1
-      productManager.ultId =
-        Math.max(...arrayProductos.map((prod) => prod.id)) + 1;
+            await newProduct.save();
+            console.log("Producto agregado exitosamente");
+        } catch (error) {
+            console.error("Error al agregar producto", error);
+            throw error;
+        }
     }
-  }
 
-  async addProduct({ title, description, price, img, code, stock }) {
-    const arrayProductos = await this.leerArchivo();
+    async getProducts({ limit = 6, page = 1, sort, query } = {}) {
+        try {
+            const queryOptions = query || {};
+            const sortOptions = sort ? { price: sort === 'asc' ? 1 : -1 } : {};
 
-    // Validamos que se hayan completado todos los campos requeridos
-    if (!title || !description || !price || !img || !code || !stock) {
-      console.log("Todos los campos son obligatorios");
-      return;
+            const [productos, total] = await Promise.all([
+                ProductModel.find(queryOptions)
+                           .sort(sortOptions)
+                           .skip((page - 1) * limit)
+                           .limit(limit)
+                           .lean(),
+                ProductModel.countDocuments(queryOptions)
+            ]);
+
+            const totalPages = Math.ceil(total / limit);
+
+            return {
+                docs: productos,
+                totalPages,
+                prevPage: page > 1 ? page - 1 : null,
+                nextPage: page < totalPages ? page + 1 : null,
+                page: parseInt(page),
+                hasPrevPage: page > 1,
+                hasNextPage: page < totalPages,
+                totalDocs: total,
+                limit: parseInt(limit)
+            };
+        } catch (error) {
+            console.error("Error al obtener los productos", error);
+            throw error;
+        }
     }
 
-    // Validamos que el código sea único
-    if (arrayProductos.some((item) => item.code === code)) {
-      console.log("El código debe ser único");
-      return;
+    async getProductById(id) {
+        try {
+            const producto = await ProductModel.findById(id);
+            if (!producto) {
+                console.error("Producto no encontrado");
+                return null;
+            }
+
+            console.log("Producto encontrado con éxito");
+            return producto;
+        } catch (error) {
+            console.error("Error al obtener el producto", error);
+            throw error;
+        }
     }
 
-    // Creamos el nuevo producto con el id autogenerado
-    const nuevoProducto = {
-      id: productManager.ultId, // Usamos el id actualizado
-      title,
-      description,
-      price,
-      img,
-      code,
-      stock,
-    };
+    async updateProduct(id, productoActualizado) {
+        try {
+            const actualizado = await ProductModel.findByIdAndUpdate(id, productoActualizado, { new: true });
+            if (!actualizado) {
+                console.error("No se encuentra el producto");
+                throw new Error("Producto no encontrado");
+            }
 
-    // Agregamos el nuevo producto al array
-    arrayProductos.push(nuevoProducto);
-
-    // Guardamos el array de productos actualizado en el archivo
-    await this.guardarArchivo(arrayProductos);
-
-    // Actualizamos ultId para el siguiente producto
-    productManager.ultId++;
-
-    console.log("Producto agregado:", nuevoProducto);
-  }
-
-  async getProducts() {
-    const arrayProductos = await this.leerArchivo();
-    return arrayProductos;
-  }
-
-  async getProductsById(id) {
-    const arrayProductos = await this.leerArchivo();
-    const producto = arrayProductos.find((item) => item.id === id);
-    return producto || "Not found";
-  }
-
-  // Método para guardar el array de productos en el archivo
-  async guardarArchivo(arrayProductos) {
-    try {
-      await fs.writeFile(this.path, JSON.stringify(arrayProductos, null, 2));
-    } catch (error) {
-      console.log("Error al guardar el archivo", error);
+            console.log("Producto actualizado");
+            return actualizado;
+        } catch (error) {
+            console.error("Error al actualizar el producto", error);
+            throw error;
+        }
     }
-  }
 
-  // Método para leer el archivo de productos
-  async leerArchivo() {
-    try {
-      const respuesta = await fs.readFile(this.path, "utf-8");
-      return JSON.parse(respuesta);
-    } catch (error) {
-      console.log("Error al leer el archivo");
-      await this.guardarArchivo([]); // Si el archivo no existe o hay error, creamos uno vacío
-      return [];
+    async deleteProduct(id) {
+        try {
+            const eliminado = await ProductModel.findByIdAndDelete(id);
+            if (!eliminado) {
+                console.error("No se encuentra el producto");
+                throw new Error("Producto no encontrado");
+            }
+
+            console.log("Producto eliminado correctamente");
+            return eliminado;
+        } catch (error) {
+            console.error("Error al eliminar el producto", error);
+            throw error;
+        }
     }
-  }
-
-  // Método para eliminar un producto
-  async deleteProduct(id) {
-    try {
-      const productos = await this.getProducts(); // Obtenemos todos los productos
-      const index = productos.findIndex((prod) => prod.id === id); // Buscamos el producto por id
-
-      if (index === -1) {
-        throw new Error("Producto no encontrado");
-      }
-
-      // Eliminamos el producto del array
-      productos.splice(index, 1);
-
-      // Guardamos los productos actualizados en el archivo
-      await this.guardarArchivo(productos);
-      console.log(`Producto con id ${id} eliminado exitosamente.`);
-    } catch (error) {
-      throw new Error("Error al eliminar el producto: " + error.message);
-    }
-  }
 }
 
-export default productManager;
+export default ProductManager;

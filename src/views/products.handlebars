@@ -1,0 +1,162 @@
+<h1 class="text-center mb-4">Catálogo de Instrumentos Musicales</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="/products" method="GET" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Ordenar por precio</label>
+                <select name="sort" class="form-select">
+                    <option value="" {{#if (eq sort '')}}selected{{/if}}>Sin ordenar</option>
+                    <option value="asc" {{#if (eq sort 'asc')}}selected{{/if}}>Menor a mayor</option>
+                    <option value="desc" {{#if (eq sort 'desc')}}selected{{/if}}>Mayor a menor</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Categoría</label>
+                <select name="category" class="form-select">
+                    <option value="" {{#if (eq category '')}}selected{{/if}}>Todas las categorías</option>
+                    <option value="PLAYSTATION" {{#if (eq category 'Playstation')}}selected{{/if}}>Playstation</option>
+                    <option value="XBOX" {{#if (eq category 'Xbox')}}selected{{/if}}>Xbox</option>
+                    <option value="PC" {{#if (eq category 'Pc')}}selected{{/if}}>Pc</option>
+                    <option value="NINTENDO" {{#if (eq category 'Nintendo')}}selected{{/if}}>Nintendo</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>Aplicar filtros
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{#if productos.length}}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {{#each productos}}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{title}}</h5>
+                        <p class="card-text">{{description}}</p>
+                        <p class="card-text"><strong>Precio:</strong> ${{price}}</p>
+                        <p class="card-text"><strong>Stock:</strong> {{stock}} unidades</p>
+                        <p class="card-text"><span class="badge bg-secondary">{{category}}</span></p>
+                        <div class="d-flex justify-content-between mt-3">
+                            <a href="/products/{{_id}}" class="btn btn-outline-primary">
+                                <i class="fas fa-info-circle me-1"></i>Detalles
+                            </a>
+                            <button onclick="agregarAlCarrito('{{_id}}')" class="btn btn-success">
+                                <i class="fas fa-cart-plus me-1"></i>Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {{/each}}
+    </div>
+
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {{#if hasPrevPage}}
+                <li class="page-item">
+                    <a class="page-link" href="/products?page={{prevPage}}&limit={{limit}}&sort={{sort}}&category={{category}}">
+                        <i class="fas fa-chevron-left me-1"></i>Anterior
+                    </a>
+                </li>
+            {{/if}}
+            
+            <li class="page-item disabled">
+                <span class="page-link">Página {{currentPage}} de {{totalPages}} (Total: {{totalDocs}})</span>
+            </li>
+            
+            {{#if hasNextPage}}
+                <li class="page-item">
+                    <a class="page-link" href="/products?page={{nextPage}}&limit={{limit}}&sort={{sort}}&category={{category}}">
+                        Siguiente<i class="fas fa-chevron-right ms-1"></i>
+                    </a>
+                </li>
+            {{/if}}
+        </ul>
+    </nav>
+{{else}}
+    <div class="alert alert-info text-center">
+        <i class="fas fa-info-circle me-2"></i>No hay productos disponibles en este momento.
+    </div>
+{{/if}}
+
+<script>
+function agregarAlCarrito(productId) {
+    const cartId = "65dc4e3a9c2b35655a2410e4";
+    
+    fetch(`/api/carts/${cartId}/product/${productId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ quantity: 1 })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al agregar al carrito');
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert('¡Producto agregado al carrito!');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al agregar al carrito');
+    });
+}
+</script>
+
+router.get("/products", async (req, res) => {
+    try {
+        const { page = 1, limit = 5, sort, category } = req.query;
+
+        const options = {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            sort: sort === 'asc' ? { price: 1 } : sort === 'desc' ? { price: -1 } : {},
+            query: category ? { category } : undefined
+        };
+
+        console.log("Fetching products with options:", options); // Log para depuración
+
+        const products = await productManager.getProducts(options);
+        
+        console.log("Products fetched:", products); // Log para depuración
+
+        // Si no hay productos, redirige a una vista o renderiza un mensaje adecuado
+        if (!products.docs.length) {
+            return res.render("products", {
+                productos: [],
+                hasPrevPage: false,
+                hasNextPage: false,
+                currentPage: page,
+                totalPages: 0,
+                totalDocs: 0,
+                sort: sort || '',
+                category: category || ''
+            });
+        }
+
+        res.render("products", {
+            productos: products.docs,
+            hasPrevPage: products.hasPrevPage,
+            hasNextPage: products.hasNextPage,
+            prevPage: products.prevPage,
+            nextPage: products.nextPage,
+            currentPage: products.page,
+            totalPages: products.totalPages,
+            limit: products.limit,
+            totalDocs: products.totalDocs,
+            sort: sort || '',
+            category: category || ''
+        });
+    } catch (error) {
+        console.error("Error al obtener los productos", error);
+        res.status(500).render('error', { error: "Error al obtener los productos" });
+    }
+});

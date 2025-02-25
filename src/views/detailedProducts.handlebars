@@ -1,0 +1,45 @@
+<div class="productos-detalle">
+    <h1>{{producto.title}}</h1>
+    
+    <div class="productos-info">
+        <div class="productos-descripcion">
+            <p>{{producto.description}}</p>
+            <p><strong>Precio:</strong> ${{producto.price}}</p>
+            <p><strong>Stock:</strong> {{producto.stock}} unidades</p>
+            <p><strong>Categoría:</strong> {{producto.category}}</p>
+            <p><strong>Código:</strong> {{producto.code}}</p>
+        </div>
+        
+        <div class="productos-acciones">
+            <button onclick="agregarAlCarrito('{{producto._id}}')" class="btn-agregar">Agregar al carrito</button>
+            <a href="/products" class="btn-volver">Volver al catálogo</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function agregarAlCarrito(productId) {
+    const cartId = "65dc4e3a9c2b35655a2410e4"; // Cambiar por tu ID de carrito
+    
+    fetch(`/api/carts/${cartId}/product/${productId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ quantity: 1 })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al agregar al carrito');
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert('Producto agregado al carrito');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al agregar al carrito');
+    });
+}
+</script>
